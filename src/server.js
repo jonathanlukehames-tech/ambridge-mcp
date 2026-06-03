@@ -152,23 +152,37 @@ app.post("/oauth/login", (req, res) => {
 });
 
 app.post("/oauth/token", (req, res) => {
-  // ChatGPT sometimes sends credentials in the Authorization header
   let code = req.body.code;
   let grant_type = req.body.grant_type;
 
-  console.log("Token request body:", JSON.stringify(req.body));
-  console.log("Token request headers:", JSON.stringify(req.headers.authorization));
+  // ChatGPT sends credentials in Authorization header as Basic auth
+  const authHeader = req.headers.authorization || "";
+  if (authHeader.startsWith("Basic ")) {
+    // decode but we don't need the credentials, just the code from body
+  }
 
-  if (grant_type === "authorization_code" && code) {
+  // Also check if code came in query string
+  if (!code) code = req.query.code;
+  if (!grant_type) grant_type = req.query.grant_type;
+
+  console.log("Token request - grant_type:", grant_type, "code:", code);
+
+  if (code && (grant_type === "authorization_code" || !grant_type)) {
     const email = sessions.get("code:" + code);
-    console.log("Looking up code:", code, "found email:", email);
-    if (!email) return res.status(400).json({ error: "invalid_grant", error_description: "Code not found or expired" });
+    console.log("Found email for code:", email);
+    if (!email) {
+      return res.status(400).json({ error: "invalid_grant" });
+    }
     sessions.delete("code:" + code);
     const token = crypto.randomBytes(24).toString("hex");
     sessions.set(token, email);
-    console.log("Issued token for:", email);
-    return res.json({ access_token: token, token_type: "bearer", expires_in: 86400 });
+    return res.json({
+      access_token: token,
+      token_type: "bearer",
+      expires_in: 86400
+    });
   }
+
   res.status(400).json({ error: "unsupported_grant_type" });
 });
 
