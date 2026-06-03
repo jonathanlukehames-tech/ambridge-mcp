@@ -330,4 +330,4 @@ app.post("/tools/get_case_status", requireAuth, (req, res) => {
 app.get("/", (req, res) => res.json({ service: "Ambridge University MCP", status: "ok" }));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Ambridge MCP running on port ${PORT}`));
+app.listen(PORT, "0.0.0.0", () => console.log(`Ambridge MCP running on port ${PORT}`));
