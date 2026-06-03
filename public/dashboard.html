@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Wellbeing — Case Management | Ambridge University</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green-900: #0f1f0f;
+      --green-800: #1a3a1a;
+      --green-700: #2d5a2d;
+      --green-600: #3d7a3d;
+      --green-100: #e8f3e8;
+      --green-50:  #f4faf4;
+      --amber:     #b45309;
+      --amber-bg:  #fffbeb;
+      --red:       #991b1b;
+      --red-bg:    #fef2f2;
+      --blue:      #1e40af;
+      --blue-bg:   #eff6ff;
+      --gray-50:   #f9fafb;
+      --gray-100:  #f3f4f6;
+      --gray-200:  #e5e7eb;
+      --gray-400:  #9ca3af;
+      --gray-600:  #4b5563;
+      --gray-800:  #1f2937;
+      --text:      #111827;
+      --serif:     'EB Garamond', Georgia, serif;
+      --sans:      'DM Sans', system-ui, sans-serif;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--gray-50);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── Header ── */
+    .site-header {
+      background: var(--green-900);
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      height: 60px;
+      gap: 16px;
+    }
+    .site-header .crest {
+      font-size: 22px;
+      line-height: 1;
+    }
+    .site-header .brand {
+      color: white;
+    }
+    .site-header .brand h1 {
+      font-family: var(--serif);
+      font-size: 17px;
+      font-weight: 400;
+      letter-spacing: 0.2px;
+    }
+    .site-header .brand p {
+      font-size: 11px;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .site-header .voxura-badge {
+      margin-left: auto;
+      font-size: 10px;
+      color: rgba(255,255,255,0.4);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .site-header .voxura-badge span {
+      background: #FD6262;
+      color: white;
+      padding: 2px 7px;
+      border-radius: 3px;
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Sub-nav ── */
+    .sub-nav {
+      background: var(--green-800);
+      padding: 0 32px;
+      display: flex;
+      gap: 0;
+    }
+    .sub-nav a {
+      color: rgba(255,255,255,0.6);
+      text-decoration: none;
+      font-size: 12px;
+      padding: 10px 16px;
+      letter-spacing: 0.3px;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .sub-nav a.active {
+      color: white;
+      border-bottom-color: #FD6262;
+    }
+    .sub-nav a:hover { color: white; }
+
+    /* ── Layout ── */
+    .container { max-width: 1200px; margin: 0 auto; padding: 28px 32px; }
+
+    /* ── Stats row ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      padding: 16px 20px;
+    }
+    .stat-label {
+      font-size: 11px;
+      color: var(--gray-400);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .stat-value {
+      font-size: 26px;
+      font-weight: 300;
+      color: var(--text);
+      font-family: var(--serif);
+    }
+    .stat-sub {
+      font-size: 11px;
+      color: var(--gray-400);
+      margin-top: 2px;
+    }
+
+    /* ── Toolbar ── */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      gap: 12px;
+    }
+    .toolbar h2 {
+      font-family: var(--serif);
+      font-size: 20px;
+      font-weight: 400;
+      color: var(--text);
+    }
+    .toolbar-right { display: flex; align-items: center; gap: 10px; }
+    .search-box {
+      padding: 7px 12px;
+      border: 1px solid var(--gray-200);
+      border-radius: 6px;
+      font-family: var(--sans);
+      font-size: 13px;
+      color: var(--text);
+      background: white;
+      width: 220px;
+      outline: none;
+    }
+    .search-box:focus { border-color: var(--green-600); }
+    .filter-select {
+      padding: 7px 10px;
+      border: 1px solid var(--gray-200);
+      border-radius: 6px;
+      font-family: var(--sans);
+      font-size: 13px;
+      color: var(--text);
+      background: white;
+      outline: none;
+    }
+    .refresh-btn {
+      padding: 7px 14px;
+      background: var(--green-700);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-family: var(--sans);
+      font-size: 12px;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      transition: background 0.15s;
+    }
+    .refresh-btn:hover { background: var(--green-800); }
+    .live-indicator {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--gray-400);
+    }
+    .live-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #22c55e;
+      animation: livepulse 2s infinite;
+    }
+    @keyframes livepulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* ── Table ── */
+    .table-wrap {
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: var(--gray-50); border-bottom: 1px solid var(--gray-200); }
+    th {
+      text-align: left;
+      padding: 10px 16px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--gray-400);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    tbody tr {
+      border-bottom: 1px solid var(--gray-100);
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--green-50); }
+    tbody tr.new-row { animation: rowIn 0.5s ease; }
+    @keyframes rowIn { from{background:#fef9c3} to{background:white} }
+    td { padding: 12px 16px; font-size: 13px; color: var(--text); vertical-align: middle; }
+    .td-ref { font-family: monospace; font-size: 12px; color: var(--green-700); font-weight: 500; }
+    .td-name { font-weight: 500; }
+    .td-course { color: var(--gray-600); font-size: 12px; }
+    .td-amount { font-weight: 500; color: var(--text); }
+    .td-date { color: var(--gray-400); font-size: 12px; }
+
+    /* ── Status badges ── */
+    .badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+    }
+    .badge-pending  { background: var(--amber-bg); color: var(--amber); }
+    .badge-review   { background: var(--blue-bg);  color: var(--blue); }
+    .badge-approved { background: var(--green-100); color: var(--green-700); }
+    .badge-declined { background: var(--red-bg);   color: var(--red); }
+
+    /* ── Priority dot ── */
+    .priority { display: flex; align-items: center; gap: 5px; font-size: 12px; }
+    .p-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .p-high   .p-dot { background: #ef4444; }
+    .p-medium .p-dot { background: #f59e0b; }
+    .p-low    .p-dot { background: #6b7280; }
+
+    /* ── Empty / loading states ── */
+    .empty-row td { text-align: center; padding: 48px; color: var(--gray-400); font-style: italic; }
+    .loading-row td { text-align: center; padding: 32px; color: var(--gray-400); }
+
+    /* ── Modal ── */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 24px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: white;
+      border-radius: 10px;
+      width: 600px;
+      max-width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+    }
+    .modal-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--gray-100);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+    .modal-header h3 { font-family: var(--serif); font-size: 20px; font-weight: 400; }
+    .modal-header .ref { font-family: monospace; font-size: 12px; color: var(--green-700); margin-top: 2px; }
+    .modal-close {
+      background: none; border: none; font-size: 20px; cursor: pointer; color: var(--gray-400);
+      line-height: 1; padding: 0 4px;
+    }
+    .modal-body { padding: 20px 24px; }
+    .detail-section { margin-bottom: 20px; }
+    .detail-section h4 {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--gray-400);
+      font-weight: 500;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .detail-item .di-label { font-size: 11px; color: var(--gray-400); margin-bottom: 2px; }
+    .detail-item .di-val { font-size: 13px; color: var(--text); font-weight: 500; }
+    .circumstances-text {
+      font-family: var(--serif);
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--gray-800);
+      font-style: italic;
+      padding: 14px;
+      background: var(--gray-50);
+      border-radius: 6px;
+      border-left: 3px solid var(--green-600);
+    }
+    .modal-footer {
+      padding: 14px 24px;
+      border-top: 1px solid var(--gray-100);
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+    .btn { padding: 8px 16px; border-radius: 6px; font-family: var(--sans); font-size: 13px; cursor: pointer; }
+    .btn-ghost { background: none; border: 1px solid var(--gray-200); color: var(--gray-600); }
+    .btn-primary { background: var(--green-700); border: none; color: white; }
+    .btn-primary:hover { background: var(--green-800); }
+    .btn-approve { background: #15803d; border: none; color: white; }
+    .btn-decline { background: var(--red-bg); border: 1px solid #fca5a5; color: var(--red); }
+
+    /* ── Footer ── */
+    .site-footer {
+      margin-top: 48px;
+      padding: 20px 32px;
+      border-top: 1px solid var(--gray-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--gray-400);
+    }
+
+    @media (max-width: 768px) {
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      .container { padding: 20px 16px; }
+      th:nth-child(n+4), td:nth-child(n+4) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="crest">🎓</div>
+  <div class="brand">
+    <h1>Ambridge University</h1>
+    <p>Student Wellbeing &amp; Financial Support</p>
+  </div>
+  <div class="voxura-badge">Digital Services Gateway by <span>VOXURA</span></div>
+</header>
+
+<nav class="sub-nav">
+  <a href="#" class="active">Case Management</a>
+  <a href="#">Reports</a>
+  <a href="#">Student Lookup</a>
+  <a href="#">Fund Overview</a>
+</nav>
+
+<main class="container">
+
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Total Cases</div>
+      <div class="stat-value" id="s-total">—</div>
+      <div class="stat-sub">All time</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Pending Review</div>
+      <div class="stat-value" id="s-pending">—</div>
+      <div class="stat-sub">Awaiting assessment</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Requested</div>
+      <div class="stat-value" id="s-amount">—</div>
+      <div class="stat-sub">This academic year</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg. Shortfall</div>
+      <div class="stat-value" id="s-shortfall">—</div>
+      <div class="stat-sub">Monthly income gap</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <h2>Hardship Fund Applications</h2>
+    <div class="toolbar-right">
+      <div class="live-indicator"><div class="live-dot"></div> Live</div>
+      <input class="search-box" type="text" id="search" placeholder="Search by name or reference…" oninput="filterTable()" />
+      <select class="filter-select" id="status-filter" onchange="filterTable()">
+        <option value="">All statuses</option>
+        <option value="Pending Review">Pending Review</option>
+        <option value="In Review">In Review</option>
+        <option value="Approved">Approved</option>
+        <option value="Declined">Declined</option>
+      </select>
+      <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table id="cases-table">
+      <thead>
+        <tr>
+          <th>Reference</th>
+          <th>Student</th>
+          <th>Type</th>
+          <th>Requested</th>
+          <th>Shortfall</th>
+          <th>Status</th>
+          <th>Submitted</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        <tr class="loading-row"><td colspan="7">Loading cases…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+
+<!-- Detail Modal -->
+<div class="modal-backdrop" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal-content">
+    <div class="modal-header">
+      <div>
+        <h3 id="m-type">Application Detail</h3>
+        <div class="ref" id="m-ref"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="m-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+      <button class="btn btn-decline">Mark Declined</button>
+      <button class="btn btn-approve">Mark Approved</button>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <span>Ambridge University — Student Wellbeing &amp; Financial Support Office</span>
+  <span>Powered by Voxura Digital Services Gateway</span>
+</footer>
+
+<script>
+  // ── CONFIG — update these two values ─────────────────────────────────────
+  const SHEET_ID   = "YOUR_GOOGLE_SHEET_ID_HERE";
+  const API_KEY    = "YOUR_GOOGLE_API_KEY_HERE";
+  // The sheet tab must be named "Cases" and have this header row in row 1:
+  // Reference | Submitted | Student ID | Name | Email | Course | Year | Type |
+  // Circumstances | Monthly Income | Monthly Outgoings | Shortfall |
+  // Amount Requested | Supporting Details | Has Evidence | Status | Tutor
+  // ─────────────────────────────────────────────────────────────────────────
+
+  let allRows = [];
+
+  async function loadData() {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Cases!A2:Q?key=${API_KEY}`;
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      const rows = (data.values || []).map(r => ({
+        ref:          r[0]  || "",
+        submitted:    r[1]  || "",
+        studentId:    r[2]  || "",
+        name:         r[3]  || "",
+        email:        r[4]  || "",
+        course:       r[5]  || "",
+        year:         r[6]  || "",
+        type:         r[7]  || "",
+        circumstances: r[8] || "",
+        income:       r[9]  || "",
+        outgoings:    r[10] || "",
+        shortfall:    r[11] || "",
+        amount:       r[12] || "",
+        supporting:   r[13] || "",
+        evidence:     r[14] || "",
+        status:       r[15] || "Pending Review",
+        tutor:        r[16] || "",
+      }));
+      allRows = rows.reverse(); // newest first
+      renderTable(allRows);
+      updateStats(allRows);
+    } catch(e) {
+      document.getElementById("table-body").innerHTML =
+        `<tr class="empty-row"><td colspan="7">Unable to load data. Check your Sheet ID and API key configuration.</td></tr>`;
+    }
+  }
+
+  function badgeHtml(status) {
+    const map = {
+      "Pending Review": "badge-pending",
+      "In Review":      "badge-review",
+      "Approved":       "badge-approved",
+      "Declined":       "badge-declined",
+    };
+    return `<span class="badge ${map[status] || "badge-pending"}">${status}</span>`;
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return "—";
+    try {
+      return new Date(iso).toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" });
+    } catch { return iso; }
+  }
+
+  function renderTable(rows) {
+    const tbody = document.getElementById("table-body");
+    if (!rows.length) {
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="7">No cases found. Applications raised via ChatGPT will appear here automatically.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map((r, i) => `
+      <tr onclick="openModal(${i})" data-i="${i}">
+        <td class="td-ref">${r.ref}</td>
+        <td>
+          <div class="td-name">${r.name}</div>
+          <div class="td-course">${r.course} · ${r.year}</div>
+        </td>
+        <td>${r.type}</td>
+        <td class="td-amount">${r.amount}</td>
+        <td style="color:${r.shortfall && r.shortfall.includes('shortfall') ? '#991b1b' : '#374151'}">${r.shortfall || "—"}</td>
+        <td>${badgeHtml(r.status)}</td>
+        <td class="td-date">${fmtDate(r.submitted)}</td>
+      </tr>
+    `).join("");
+  }
+
+  function updateStats(rows) {
+    document.getElementById("s-total").textContent = rows.length;
+    document.getElementById("s-pending").textContent = rows.filter(r => r.status === "Pending Review").length;
+
+    const amounts = rows.map(r => parseFloat((r.amount || "0").replace(/[^0-9.]/g, ""))).filter(Boolean);
+    const total = amounts.reduce((a, b) => a + b, 0);
+    document.getElementById("s-amount").textContent = total ? `£${Math.round(total).toLocaleString()}` : "£0";
+
+    const shortfalls = rows.map(r => {
+      const m = (r.shortfall || "").match(/£(\d+)/);
+      return m ? parseInt(m[1]) : 0;
+    }).filter(Boolean);
+    const avg = shortfalls.length ? Math.round(shortfalls.reduce((a,b)=>a+b,0) / shortfalls.length) : 0;
+    document.getElementById("s-shortfall").textContent = avg ? `£${avg}` : "—";
+  }
+
+  function filterTable() {
+    const q = document.getElementById("search").value.toLowerCase();
+    const s = document.getElementById("status-filter").value;
+    const filtered = allRows.filter(r =>
+      (!q || r.name.toLowerCase().includes(q) || r.ref.toLowerCase().includes(q)) &&
+      (!s || r.status === s)
+    );
+    renderTable(filtered);
+  }
+
+  function openModal(i) {
+    const r = allRows[i];
+    document.getElementById("m-type").textContent = r.type || "Financial Hardship Application";
+    document.getElementById("m-ref").textContent = r.ref;
+    document.getElementById("m-body").innerHTML = `
+      <div class="detail-section">
+        <h4>Student Details</h4>
+        <div class="detail-grid">
+          <div class="detail-item"><div class="di-label">Full Name</div><div class="di-val">${r.name}</div></div>
+          <div class="detail-item"><div class="di-label">Student ID</div><div class="di-val">${r.studentId}</div></div>
+          <div class="detail-item"><div class="di-label">Course</div><div class="di-val">${r.course}</div></div>
+          <div class="detail-item"><div class="di-label">Year of Study</div><div class="di-val">${r.year}</div></div>
+          <div class="detail-item"><div class="di-label">Email</div><div class="di-val">${r.email}</div></div>
+          <div class="detail-item"><div class="di-label">Personal Tutor</div><div class="di-val">${r.tutor || "—"}</div></div>
+        </div>
+      </div>
+      <div class="detail-section">
+        <h4>Financial Summary</h4>
+        <div class="detail-grid">
+          <div class="detail-item"><div class="di-label">Monthly Income</div><div class="di-val">${r.income}</div></div>
+          <div class="detail-item"><div class="di-label">Monthly Outgoings</div><div class="di-val">${r.outgoings}</div></div>
+          <div class="detail-item"><div class="di-label">Shortfall</div><div class="di-val" style="color:#991b1b">${r.shortfall || "—"}</div></div>
+          <div class="detail-item"><div class="di-label">Amount Requested</div><div class="di-val">${r.amount}</div></div>
+        </div>
+      </div>
+      <div class="detail-section">
+        <h4>Circumstances (student's own words)</h4>
+        <p class="circumstances-text">${r.circumstances || "No description provided."}</p>
+      </div>
+      ${r.supporting ? `<div class="detail-section">
+        <h4>Supporting Information</h4>
+        <p style="font-size:13px;color:#374151;line-height:1.6">${r.supporting}</p>
+      </div>` : ""}
+      <div class="detail-section">
+        <h4>Application Meta</h4>
+        <div class="detail-grid">
+          <div class="detail-item"><div class="di-label">Submitted</div><div class="di-val">${fmtDate(r.submitted)}</div></div>
+          <div class="detail-item"><div class="di-label">Evidence Attached</div><div class="di-val">${r.evidence}</div></div>
+          <div class="detail-item"><div class="di-label">Current Status</div><div class="di-val">${badgeHtml(r.status)}</div></div>
+          <div class="detail-item"><div class="di-label">Hardship Type</div><div class="di-val">${r.type}</div></div>
+        </div>
+      </div>
+    `;
+    document.getElementById("modal").classList.add("open");
+  }
+
+  function closeModal() {
+    document.getElementById("modal").classList.remove("open");
+  }
+
+  // Auto-refresh every 60 seconds
+  loadData();
+  setInterval(loadData, 60000);
+</script>
+</body>
+</html>
