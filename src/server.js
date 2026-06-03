@@ -5,6 +5,8 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
+
+// ── Middleware — ALL must come before routes ──────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use((req, res, next) => {
@@ -52,7 +54,7 @@ const STUDENTS = {
   },
 };
 
-// Active sessions: token → student email
+// Active sessions
 const sessions = new Map();
 
 // ── Google Sheets helper ──────────────────────────────────────────────────────
@@ -65,11 +67,9 @@ async function appendToSheet(rowData) {
     const sheets = google.sheets({ version: "v4", auth });
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: "Cases!A:N",
+      range: "Cases!A:Q",
       valueInputOption: "USER_ENTERED",
-      requestBody: {
-        values: [rowData],
-      },
+      requestBody: { values: [rowData] },
     });
     return true;
   } catch (err) {
@@ -78,12 +78,19 @@ async function appendToSheet(rowData) {
   }
 }
 
-// ── OAuth2 endpoints (required by ChatGPT connector) ─────────────────────────
-// ChatGPT uses OAuth to authenticate. We simulate a simple token exchange.
+// ── Auth middleware ───────────────────────────────────────────────────────────
+function requireAuth(req, res, next) {
+  const auth = req.headers.authorization || "";
+  const token = auth.replace("Bearer ", "").trim();
+  const email = sessions.get(token);
+  if (!email) return res.status(401).json({ error: "Unauthorized. Please sign in." });
+  req.student = STUDENTS[email];
+  next();
+}
 
+// ── OAuth login page ──────────────────────────────────────────────────────────
 app.get("/oauth/authorize", (req, res) => {
   const { redirect_uri, state } = req.query;
-  // Serve a simple login form
   res.send(`<!DOCTYPE html>
 <html>
 <head>
@@ -91,19 +98,18 @@ app.get("/oauth/authorize", (req, res) => {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Georgia', serif; background: #0f1f0f; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    body { font-family: Georgia, serif; background: #0f1f0f; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
     .card { background: #fff; border-radius: 8px; padding: 40px; width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
     .logo { text-align: center; margin-bottom: 28px; }
-    .logo h1 { font-size: 22px; color: #1a3a1a; letter-spacing: -0.3px; }
-    .logo p { font-size: 13px; color: #666; margin-top: 4px; }
+    .logo h1 { font-size: 22px; color: #1a3a1a; }
+    .logo p { font-size: 13px; color: #666; margin-top: 4px; font-family: sans-serif; }
     .crest { font-size: 36px; margin-bottom: 8px; }
-    label { display: block; font-size: 12px; color: #444; margin-bottom: 4px; font-family: sans-serif; letter-spacing: 0.3px; text-transform: uppercase; }
+    label { display: block; font-size: 12px; color: #444; margin-bottom: 4px; font-family: sans-serif; text-transform: uppercase; letter-spacing: 0.3px; }
     input { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; margin-bottom: 16px; font-family: sans-serif; }
     input:focus { outline: none; border-color: #2d5a2d; }
-    button { width: 100%; background: #2d5a2d; color: white; border: none; padding: 12px; border-radius: 4px; font-size: 14px; cursor: pointer; font-family: sans-serif; letter-spacing: 0.3px; }
+    button { width: 100%; background: #2d5a2d; color: white; border: none; padding: 12px; border-radius: 4px; font-size: 14px; cursor: pointer; font-family: sans-serif; }
     button:hover { background: #1a3a1a; }
-    .hint { font-size: 11px; color: #999; text-align: center; margin-top: 16px; font-family: sans-serif; }
-    .error { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; padding: 8px 12px; border-radius: 4px; font-size: 13px; margin-bottom: 16px; font-family: sans-serif; display: none; }
+    .hint { font-size: 11px; color: #999; text-align: center; margin-top: 16px; font-family: sans-serif; line-height: 1.5; }
   </style>
 </head>
 <body>
@@ -113,7 +119,6 @@ app.get("/oauth/authorize", (req, res) => {
       <h1>Ambridge University</h1>
       <p>Student Services Portal</p>
     </div>
-    <div class="error" id="err">Invalid email or password. Please try again.</div>
     <form method="POST" action="/oauth/login">
       <input type="hidden" name="redirect_uri" value="${redirect_uri || ""}" />
       <input type="hidden" name="state" value="${state || ""}" />
@@ -123,21 +128,17 @@ app.get("/oauth/authorize", (req, res) => {
       <input type="password" name="password" placeholder="••••••••••" required />
       <button type="submit">Sign in to Student Services</button>
     </form>
-    <p class="hint">Demo accounts: s.archer, p.grundy, e.pargetter @ambridge.ac.uk / pw: ambridge2024</p>
+    <p class="hint">Demo: s.archer@ambridge.ac.uk / ambridge2024</p>
   </div>
 </body>
 </html>`);
 });
 
-
-
 app.post("/oauth/login", (req, res) => {
   const { email, password, redirect_uri, state } = req.body;
   const student = STUDENTS[email?.toLowerCase()];
   if (!student || student.password !== password) {
-    return res.send(`<script>
-      document.addEventListener('DOMContentLoaded',()=>{document.getElementById('err').style.display='block'});
-    </script>`).status(401);
+    return res.status(401).send("Invalid credentials");
   }
   const code = crypto.randomBytes(16).toString("hex");
   sessions.set("code:" + code, email.toLowerCase());
@@ -160,17 +161,7 @@ app.post("/oauth/token", (req, res) => {
   res.status(400).json({ error: "unsupported_grant_type" });
 });
 
-// ── Auth middleware ────────────────────────────────────────────────────────────
-function requireAuth(req, res, next) {
-  const auth = req.headers.authorization || "";
-  const token = auth.replace("Bearer ", "").trim();
-  const email = sessions.get(token);
-  if (!email) return res.status(401).json({ error: "Unauthorized. Please sign in." });
-  req.student = STUDENTS[email];
-  next();
-}
-
-// ── MCP manifest ───────────────────────────────────────────────────────────────
+// ── OpenAPI schema ────────────────────────────────────────────────────────────
 app.get("/.well-known/openapi.yaml", (req, res) => {
   const base = process.env.BASE_URL || `https://${req.headers.host}`;
   res.type("text/yaml").send(`openapi: "3.1.0"
@@ -191,7 +182,7 @@ paths:
   /tools/check_hardship_eligibility:
     post:
       operationId: check_hardship_eligibility
-      summary: Check if student is eligible for financial hardship support and what fund applies
+      summary: Check if student is eligible for financial hardship support
       responses:
         "200":
           description: Eligibility result
@@ -216,25 +207,21 @@ paths:
                 hardship_type:
                   type: string
                   enum: [Unexpected expense, Income loss, Ongoing shortfall, Housing crisis, Food insecurity, Other]
-                  description: Primary category of hardship
                 circumstances:
                   type: string
-                  description: Full description of circumstances in student's own words
                 monthly_income:
                   type: number
-                  description: Student's total monthly income including loan, part-time work, family support (GBP)
                 monthly_essential_outgoings:
                   type: number
-                  description: Total monthly essential outgoings - rent, bills, food, travel (GBP)
                 amount_requested:
                   type: number
-                  description: Amount of emergency support requested (GBP)
                 supporting_details:
                   type: string
-                  description: Any additional context - what the funds will be used for, timeline of crisis, steps already taken
                 has_supporting_evidence:
                   type: boolean
-                  description: Whether student has bank statements, letters, or other evidence to upload
+      responses:
+        "200":
+          description: Application submitted
   /tools/get_case_status:
     post:
       operationId: get_case_status
@@ -249,7 +236,6 @@ paths:
               properties:
                 case_reference:
                   type: string
-                  description: Case reference number e.g. AHF-2026-0042
       responses:
         "200":
           description: Case status
@@ -262,8 +248,8 @@ app.get("/.well-known/ai-plugin.json", (req, res) => {
     schema_version: "v1",
     name_for_human: "Ambridge University Student Services",
     name_for_model: "ambridge_student_services",
-    description_for_human: "Access Ambridge University student services — financial hardship applications, case tracking and student support.",
-    description_for_model: "Tools for Ambridge University students. Use get_student_profile first to identify the student. Then use check_hardship_eligibility and submit_hardship_application to raise a financial hardship case. Always collect all required information conversationally before submitting.",
+    description_for_human: "Access Ambridge University student services — financial hardship applications and case tracking.",
+    description_for_model: "Tools for Ambridge University students. Use get_student_profile first. Then use check_hardship_eligibility and submit_hardship_application to raise a financial hardship case.",
     auth: {
       type: "oauth",
       client_url: `${base}/oauth/authorize`,
@@ -272,30 +258,19 @@ app.get("/.well-known/ai-plugin.json", (req, res) => {
       authorization_content_type: "application/x-www-form-urlencoded",
       verification_tokens: {},
     },
-    api: {
-      type: "openapi",
-      url: `${base}/.well-known/openapi.yaml`,
-    },
-    logo_url: `${base}/logo.png`,
+    api: { type: "openapi", url: `${base}/.well-known/openapi.yaml` },
     contact_email: "info@voxura.co.uk",
-    legal_info_url: `${base}/legal`,
   });
 });
 
-// ── Tool endpoints ─────────────────────────────────────────────────────────────
+// ── Tool endpoints ────────────────────────────────────────────────────────────
 app.post("/tools/get_student_profile", requireAuth, (req, res) => {
   const s = req.student;
   res.json({
-    student_id: s.id,
-    full_name: s.name,
-    email: s.email,
-    course: s.course,
-    year_of_study: s.year,
-    personal_tutor: s.tutor,
+    student_id: s.id, full_name: s.name, email: s.email,
+    course: s.course, year_of_study: s.year, personal_tutor: s.tutor,
     previous_hardship_applications: s.previousApplications,
-    enrolled: true,
-    hardship_fund_available: true,
-    max_emergency_award: 1500,
+    enrolled: true, hardship_fund_available: true, max_emergency_award: 1500,
   });
 });
 
@@ -305,12 +280,11 @@ app.post("/tools/check_hardship_eligibility", requireAuth, (req, res) => {
     eligible: true,
     fund_name: "Ambridge University Hardship Fund",
     notes: s.previousApplications > 0
-      ? "Student has one previous application. Second applications are reviewed by the senior panel — additional supporting evidence is strongly recommended."
+      ? "Student has one previous application. Additional evidence strongly recommended."
       : "No previous applications. Standard assessment applies.",
     typical_turnaround_days: 5,
     max_award_gbp: 1500,
-    what_to_expect: "Applications are reviewed by the Student Wellbeing team. You will receive an email within 5 working days. Emergency same-day support may be available if circumstances are severe.",
-    evidence_that_helps: ["Bank statements (last 3 months)", "Tenancy agreement or rent demand", "Letter from employer confirming income change", "Medical letter if relevant", "Screenshot of outstanding bills"],
+    evidence_that_helps: ["Bank statements (last 3 months)", "Tenancy agreement", "Letter from employer", "Screenshot of outstanding bills"],
   });
 });
 
@@ -319,63 +293,40 @@ app.post("/tools/submit_hardship_application", requireAuth, async (req, res) => 
   const body = req.body;
   const caseRef = `AHF-2026-${String(Math.floor(Math.random() * 9000) + 1000)}`;
   const submittedAt = new Date().toISOString();
-
   const shortfall = (body.monthly_essential_outgoings || 0) - (body.monthly_income || 0);
 
-  // Write to Google Sheets
   const row = [
-    caseRef,
-    submittedAt,
-    s.id,
-    s.name,
-    s.email,
-    s.course,
-    `Year ${s.year}`,
-    body.hardship_type || "",
-    body.circumstances || "",
-    `£${body.monthly_income || 0}`,
-    `£${body.monthly_essential_outgoings || 0}`,
+    caseRef, submittedAt, s.id, s.name, s.email, s.course, `Year ${s.year}`,
+    body.hardship_type || "", body.circumstances || "",
+    `£${body.monthly_income || 0}`, `£${body.monthly_essential_outgoings || 0}`,
     shortfall > 0 ? `£${shortfall} shortfall` : "Balanced",
-    `£${body.amount_requested || 0}`,
-    body.supporting_details || "",
-    body.has_supporting_evidence ? "Yes" : "No",
-    "Pending Review",
-    s.tutor,
+    `£${body.amount_requested || 0}`, body.supporting_details || "",
+    body.has_supporting_evidence ? "Yes" : "No", "Pending Review", s.tutor,
   ];
 
   const written = await appendToSheet(row);
 
   res.json({
-    success: true,
-    case_reference: caseRef,
-    submitted_at: submittedAt,
-    student_name: s.name,
-    amount_requested: `£${body.amount_requested}`,
+    success: true, case_reference: caseRef, submitted_at: submittedAt,
+    student_name: s.name, amount_requested: `£${body.amount_requested}`,
     next_steps: [
       `Your application (${caseRef}) has been received by the Student Wellbeing team.`,
       "You will receive a confirmation email within 1 hour.",
-      `A decision will be made within 5 working days by ${s.tutor}'s team.`,
-      body.has_supporting_evidence
-        ? "Please email your supporting evidence to hardship@ambridge.ac.uk quoting your case reference."
-        : "Your application has been noted as having no supporting evidence — providing bank statements would strengthen your case.",
+      `A decision will be made within 5 working days.`,
     ],
-    emergency_support_note: body.amount_requested > 500
-      ? "Given the amount requested, if your situation is urgent, please also contact the Student Wellbeing drop-in on +44 1234 567890."
-      : null,
     written_to_system: written,
   });
 });
 
 app.post("/tools/get_case_status", requireAuth, (req, res) => {
-  const { case_reference } = req.body;
   res.json({
-    case_reference,
+    case_reference: req.body.case_reference,
     status: "Pending Review",
-    message: "Your application is in the queue for review by the Student Wellbeing team. You will be contacted within 5 working days.",
+    message: "Your application is being reviewed. You will be contacted within 5 working days.",
   });
 });
 
-// ── Health ─────────────────────────────────────────────────────────────────────
+// ── Health check ──────────────────────────────────────────────────────────────
 app.get("/", (req, res) => res.json({ service: "Ambridge University MCP", status: "ok" }));
 
 const PORT = process.env.PORT || 3000;
