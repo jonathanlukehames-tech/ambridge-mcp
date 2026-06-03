@@ -140,6 +140,9 @@ app.post("/oauth/login", (req, res) => {
   if (!student || student.password !== password) {
     return res.status(401).send("Invalid credentials");
   }
+  if (!redirect_uri) {
+    return res.status(400).send("Missing redirect_uri");
+  }
   const code = crypto.randomBytes(16).toString("hex");
   sessions.set("code:" + code, email.toLowerCase());
   const redirect = new URL(redirect_uri);
